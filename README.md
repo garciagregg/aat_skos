@@ -7,13 +7,13 @@ This script extracts all AAT records from the Getty Vocabularies LOD site in the
 The script was built and run using Python 3.6.5. Package dependencies:
 
 JSON
-'''
+```
 SPARQLWrapper
-'''
+```
 urllib
-'''
+```
 datetime
-'''
+```
 re
-'''
+```
 io
