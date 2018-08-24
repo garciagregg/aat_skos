@@ -1,0 +1,33 @@
+# get all facets as top concepts
+CONSTRUCT {
+aat: skos:hasTopConcept ?f.
+aat: a ?t
+} WHERE {?f a gvp:Facet; skos:inScheme aat:.
+aat: a ?t
+}
+
+# get all AAT IDs
+select * {?x skos:inScheme aat:}
+
+# run CONSTRUCT statement for all AAT IDs
+CONSTRUCT {
+?s ?p1 ?o1.
+?s dc:identifier ?o2.
+?s skos:scopeNote ?o3.
+?s skos:broader ?o4.
+?s skos:hasTopConcept ?o5.
+?s dcterms:created ?o6.
+?s dcterms:modified ?mod1.
+?s a ?t1
+} WHERE {
+BIND ( <http://vocab.getty.edu/aat/300198841> as ?s)
+{?s ?p1 ?o1
+FILTER(!isBlank(?o1) && (?p1=skos:prefLabel || ?p1=skos:altLabel))}
+UNION {?s a ?t1 FILTER(?t1=skos:Concept || ?t1=skos:Collection)}
+UNION {?s skos:scopeNote/rdf:value ?o3 FILTER(!isBlank(?o3))}
+UNION {?s gvp:broaderPreferred ?o4}
+UNION {?s gvp:broaderExtended ?o5. ?o5 a gvp:Facet}
+UNION {?s dc:identifier ?o2}
+UNION {?s dcterms:created ?o6}
+UNION {select (max(?mod) as ?mod1) {?s dcterms:modified ?mod}}
+}
