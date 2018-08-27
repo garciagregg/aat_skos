@@ -15,4 +15,4 @@ io
 
 ## Output
 
-The script produces the file AAT_SKOS.rdf in the same directory where the script is located.
+The script produces the file AAT_SKOS.rdf in the same directory where the script is located. A recently generated copy of AAT_SKOS.rdf is provided in this repo.
