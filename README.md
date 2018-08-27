@@ -12,3 +12,7 @@ urllib\
 datetime\
 re\
 io
+
+## Output
+
+The script produces the file AAT_SKOS.rdf in the same directory where the script is located.
