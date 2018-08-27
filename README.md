@@ -11,7 +11,7 @@ SPARQLWrapper\
 urllib\
 datetime\
 re\
-io\
+io
 
 CONSTRUCT statements used by the script are contained in the CONSTRUCT.sparql file.
 
