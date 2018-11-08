@@ -1,4 +1,4 @@
-import urllib.request, urllib.parse, json, datetime, re, io
+import urllib.request, urllib.parse, json, datetime, re, io, requests
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 # begin file and add prefixes
@@ -13,10 +13,10 @@ file_begin = """<?xml version="1.0" encoding="UTF-8"?>
 
 file_end = '</rdf:RDF>'
 # set SPARQL endpoint
-endpoint = 'http://vocab.getty.edu/sparql.rdf?query='
+endpoint = 'http://vocab.getty.edu/sparql'
 
 # AAT entity construct statement beginning and end
-construct_begin = """CONSTRUCT {
+construct_query = """CONSTRUCT {
 ?s ?p1 ?o1.
 ?s dc:identifier ?o2.
 ?s skos:scopeNote ?o3.
@@ -26,9 +26,7 @@ construct_begin = """CONSTRUCT {
 ?s dcterms:modified ?mod1.
 ?s a ?t1
 } WHERE {
-BIND ( <http://vocab.getty.edu/aat/"""
-
-construct_end = """> as ?s)
+BIND ( <http://vocab.getty.edu/aat/ENTITY_ID> as ?s)
 {?s ?p1 ?o1
 FILTER(!isBlank(?o1) && (?p1=skos:prefLabel || ?p1=skos:altLabel))}
 UNION {?s a ?t1 FILTER(?t1=skos:Concept || ?t1=skos:Collection)}
@@ -53,15 +51,34 @@ aat: a ?t
 # parameters needed for querying SPARQL endpoint using urllib
 end_url = '&_implicit=false&implicit=true&_equivalent=false&_form=%2Fsparql'
 
-outfile = open('AATSKOS_All.rdf','w',encoding='utf8')
+#outfile = open('AATSKOS_All.rdf','w',encoding='utf8')
+outfile = open('AATSKOS_ProcTech.rdf','w',encoding='utf8')
 print(file_begin, file = outfile, end = '\n')
-query_encode = urllib.parse.quote(topconcept_construct)
-req = urllib.request.Request(url=endpoint+query_encode+end_url,headers={'Accept':'text/html'})
-with urllib.request.urlopen(req) as response:
-    the_page = response.read().decode()
-    page_lines = the_page.splitlines()
+the_page = requests.post(endpoint,data={'query':topconcept_construct},headers={'Accept':'application/rdf+xml','Accept-Charset':'utf-8'})
+the_page.encoding='utf-8'
+inDescription = False
+for line in the_page.text.splitlines():
+    if 'rdf:Description' in line:
+        if inDescription == True:
+            print(line, file = outfile, end = '\n')
+            inDescription = False
+        else:
+            inDescription = True
+    if inDescription:
+        print(line, file = outfile, end = '\n')
+sparql = SPARQLWrapper(endpoint)
+sparql.setQuery("select * {?x skos:inScheme aat:}") # entire AAT
+#sparql.setQuery("select * {?x gvp:broaderExtended aat:300053003}") # use this query for individual facets
+sparql.setReturnFormat(JSON)
+d = sparql.query().convert()
+for index in range(len(d['results']['bindings'])):
+    uri=d['results']['bindings'][index]['x']['value']
+    aat_id=uri.replace('http://vocab.getty.edu/aat/','')
+    print(aat_id)
+    the_page = requests.post(endpoint,data={'query':construct_query.replace('ENTITY_ID',aat_id)},headers={'Accept':'application/rdf+xml','Accept-Charset':'utf-8'})
+    the_page.encoding='utf-8'
     inDescription = False
-    for line in page_lines:
+    for line in the_page.text.splitlines():
         if 'rdf:Description' in line:
             if inDescription == True:
                 print(line, file = outfile, end = '\n')
@@ -70,28 +87,5 @@ with urllib.request.urlopen(req) as response:
                 inDescription = True
         if inDescription:
             print(line, file = outfile, end = '\n')
-sparql = SPARQLWrapper("http://vocab.getty.edu/sparql")
-sparql.setQuery("select * {?x skos:inScheme aat:}")
-sparql.setReturnFormat(JSON)
-d = sparql.query().convert()
-for index in range(len(d['results']['bindings'])):
-    uri=d['results']['bindings'][index]['x']['value']
-    aat_id=uri.replace('http://vocab.getty.edu/aat/','')
-    print(aat_id)
-    query_encode = urllib.parse.quote(construct_begin+aat_id+construct_end)
-    req = urllib.request.Request(url=endpoint+query_encode+end_url,headers={'Accept':'text/html'})
-    with urllib.request.urlopen(req) as response:
-        the_page = response.read().decode()
-        page_lines = the_page.splitlines()
-        inDescription = False
-        for line in page_lines:
-            if 'rdf:Description' in line:
-                if inDescription == True:
-                    print(line, file = outfile, end = '\n')
-                    inDescription = False
-                else:
-                    inDescription = True
-            if inDescription:
-                print(line, file = outfile, end = '\n')
 print(file_end, file = outfile, end = '\n')
 outfile.close()
