@@ -51,8 +51,7 @@ aat: a ?t
 # parameters needed for querying SPARQL endpoint using urllib
 end_url = '&_implicit=false&implicit=true&_equivalent=false&_form=%2Fsparql'
 
-#outfile = open('AATSKOS_All.rdf','w',encoding='utf8')
-outfile = open('AATSKOS_ProcTech.rdf','w',encoding='utf8')
+outfile = open('AATSKOS_All.rdf','w',encoding='utf8')
 print(file_begin, file = outfile, end = '\n')
 the_page = requests.post(endpoint,data={'query':topconcept_construct},headers={'Accept':'application/rdf+xml','Accept-Charset':'utf-8'})
 the_page.encoding='utf-8'
