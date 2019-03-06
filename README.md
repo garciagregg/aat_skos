@@ -8,6 +8,7 @@ The script was built and run using Python 3.6.5. Package dependencies:
 
 JSON\
 SPARQLWrapper\
+requests\
 urllib\
 datetime\
 re\
